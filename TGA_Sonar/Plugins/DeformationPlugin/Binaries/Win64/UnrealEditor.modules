@@ -1,8 +1,0 @@
-{
-	"BuildId": "43139311",
-	"Modules": 
-	{
-		"DeformationCompute": "UnrealEditor-DeformationCompute.dll",
-		"DeformationPlugin": "UnrealEditor-DeformationPlugin.dll"
-	}
-}
