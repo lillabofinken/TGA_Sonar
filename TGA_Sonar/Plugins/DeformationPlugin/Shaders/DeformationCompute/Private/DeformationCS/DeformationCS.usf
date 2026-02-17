@@ -18,20 +18,23 @@ void DeformationCS(
 	uint GroupIndex : SV_GroupIndex )
 {
 	const float2 UV = float2( DispatchThreadId.xy ) / float2( RtResolution );
-	
-	float2 outputValue = 0;//Panorama.Sample(TextureSampler, UV);
 
-	for(int i = 0; i < PanoramaResolution.y; i++)
-	{
-		float PanoramaValue = Panorama.Load(uint3(UV.x * PanoramaResolution.x, i, 0)).r / Range;
-		int Pixel = PanoramaValue * RtResolution.y;
-		if (Pixel == DispatchThreadId.y)
-		{
-			outputValue = outputValue + 1.0 / PanoramaResolution.y;
-		}
-	}
+	const int UVOffset = ( RtResolution - 16 ) * ( CurrentAngle / 360.0f );
+	const uint3  UVInt = DispatchThreadId + uint3( UVOffset, 0, 0 );
+	
+	float2 outputValue = Range;//Panorama.Sample(TextureSampler, UV);
+
+	//for(int i = 0; i < PanoramaResolution.y; i++)
+	//{
+	//	float PanoramaValue = Panorama.Load(uint3(UV.x * PanoramaResolution.x, i, 0)).r / Range;
+	//	int Pixel = PanoramaValue * RtResolution.y;
+	//	if (Pixel == DispatchThreadId.y)
+	//	{
+	//		outputValue = outputValue + 1.0 / PanoramaResolution.y;
+	//	}
+	//}
 	
 
 	
-	RenderTargetWrite[DispatchThreadId.xy] = outputValue;
+	RenderTargetWrite[UVInt.xy] = outputValue;
 }

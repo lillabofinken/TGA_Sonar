@@ -36,7 +36,6 @@ public:
 		/*
 		* Here's where you define one or more of the input parameters for your shader.
 		* Some examples:
-		*/
 		// SHADER_PARAMETER(uint32, MyUint32) // On the shader side: uint32 MyUint32;
 		// SHADER_PARAMETER(FVector3f, MyVector) // On the shader side: float3 MyVector;
 
@@ -55,6 +54,7 @@ public:
 
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
+		*/
 		
        SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D, RenderTargetWrite )
        SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   RenderTargetRead  )
@@ -142,7 +142,7 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			FRDGTextureRef RtTextureWrite = GraphBuilder.CreateTexture(Desc, TEXT("RtWrite"));
 			FRDGTextureRef RtTextureRead  = RegisterExternalTexture(GraphBuilder,Params.RenderTarget->GetRenderTargetTexture(),TEXT( "RtRead" ) );
 			FRDGTextureRef TargetTexture  = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("RtOutput"));
-
+			
 			{// Pass Values to shader, EPIC VERY COOL
 				
 				PassParameters->RenderTargetWrite  = GraphBuilder.CreateUAV(RtTextureWrite);

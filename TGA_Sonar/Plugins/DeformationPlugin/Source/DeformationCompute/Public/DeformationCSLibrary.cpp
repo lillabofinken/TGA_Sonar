@@ -4,6 +4,10 @@ void UDeformationCSLibrary::ExecuteRTComputeShader(UTextureRenderTarget2D* RT, U
 {
 	//Create a dispatch parameters struct and fill it the input array with our args
 	FDeformationCSDispatchParams Params(RT->SizeX, RT->SizeY, 1);
+	const int WidthToUpdate = RT->SizeX * (UpdateAngle / 360.0f);
+	Params.X = 16;
+
+	
 	Params.Panorama = InputTexture->GameThread_GetRenderTargetResource();
 	Params.RenderTarget = RT->GameThread_GetRenderTargetResource();
 	Params.CurrentAngle = CurrentAngle;
