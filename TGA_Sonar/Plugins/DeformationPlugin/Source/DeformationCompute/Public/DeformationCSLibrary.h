@@ -16,7 +16,7 @@ class DEFORMATIONCOMPUTE_API UDeformationCSLibrary : public UObject
 
 public:
 	UFUNCTION(BlueprintCallable)
-	static void ExecuteRTComputeShader(UTextureRenderTarget2D* RT, float SnowDepth);
+	static void ExecuteRTComputeShader(UTextureRenderTarget2D* RT, UTextureRenderTarget2D* InputTexture, float CurrentAngle, float UpdateAngle, float Range);
 	
 	static void ExecuteRTComputeShader(FDeformationCSDispatchParams _params);
 };

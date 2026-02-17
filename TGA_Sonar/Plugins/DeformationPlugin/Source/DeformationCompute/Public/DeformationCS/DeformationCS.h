@@ -6,7 +6,6 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/MaterialRenderProxy.h"
 
-//#include "DeformationCS.generated.h"
 
 struct DEFORMATIONCOMPUTE_API FDeformationCSDispatchParams
 {
@@ -16,7 +15,11 @@ struct DEFORMATIONCOMPUTE_API FDeformationCSDispatchParams
 
 	
 	FRenderTarget* RenderTarget;
-	float testValue = 0;
+	FRenderTarget* Panorama;
+	
+	float CurrentAngle = 0;
+	float UpdateAngle  = 0;
+	float Range        = 0;
 	
 
 	FDeformationCSDispatchParams(int x, int y, int z)

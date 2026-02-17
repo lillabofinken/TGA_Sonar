@@ -16,7 +16,8 @@
 DECLARE_STATS_GROUP(TEXT("DeformationCS"), STATGROUP_DeformationCS, STATCAT_Advanced);
 DECLARE_CYCLE_STAT(TEXT("DeformationCS Execute"), STAT_DeformationCS_Execute, STATGROUP_DeformationCS);
 
-#define SS_TextureFormat PF_G16R16F  
+#define RenderTextureFormat PF_G16R16F
+#define InputTextureFormat PF_R16F
 // This class carries our parameter declarations and acts as the bridge between cpp and HLSL.
 class DEFORMATIONCOMPUTE_API FDeformationCS: public FGlobalShader
 {
@@ -55,8 +56,17 @@ public:
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
 		
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
-		SHADER_PARAMETER(float, testValue)
+       SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D, RenderTargetWrite )
+       SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   RenderTargetRead  )
+       SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   Panorama          )
+	   SHADER_PARAMETER_SAMPLER        ( SamplerState, TextureSampler   )
+
+       SHADER_PARAMETER( float,     CurrentAngle       )
+       SHADER_PARAMETER( float,     UpdateAngle        )
+       SHADER_PARAMETER( float,     Range              )
+       SHADER_PARAMETER( FIntPoint, RtResolution       )
+       SHADER_PARAMETER( FIntPoint, PanoramaResolution )
+
 		
 
 	END_SHADER_PARAMETER_STRUCT()
@@ -122,16 +132,29 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 		if (bIsShaderValid) {
 			FDeformationCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FDeformationCS::FParameters>();
 
+			auto PanoramaResolution = Params.Panorama->GetSizeXY();
+			FRDGTextureRef PanoramaTexture  = RegisterExternalTexture(GraphBuilder,Params.Panorama->GetRenderTargetTexture(),TEXT( "PanoramaTexture" ) );
+			//FRDGTextureDesc PanoramaDesc(FRDGTextureDesc::Create2D(Params.Panorama->GetSizeXY(), RenderTextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+			//FRDGTextureRef  PanoramaTexture = GraphBuilder.CreateTexture(PanoramaDesc, TEXT("SonarInputTexture"));
 			
-			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), SS_TextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
-			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("DeformationCS_TempTexture"));
-			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("DeformationCS_RT"));
+			auto RtResolution = Params.RenderTarget->GetSizeXY();
+			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(RtResolution, RenderTextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+			FRDGTextureRef RtTextureWrite = GraphBuilder.CreateTexture(Desc, TEXT("RtWrite"));
+			FRDGTextureRef RtTextureRead  = RegisterExternalTexture(GraphBuilder,Params.RenderTarget->GetRenderTargetTexture(),TEXT( "RtRead" ) );
+			FRDGTextureRef TargetTexture  = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("RtOutput"));
 
 			{// Pass Values to shader, EPIC VERY COOL
 				
-				PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
-				PassParameters->testValue = Params.testValue;
-				
+				PassParameters->RenderTargetWrite  = GraphBuilder.CreateUAV(RtTextureWrite);
+				PassParameters->RenderTargetRead   = RtTextureRead;
+				PassParameters->Panorama           = PanoramaTexture;
+				PassParameters->CurrentAngle       = Params.CurrentAngle;
+				PassParameters->UpdateAngle        = Params.UpdateAngle;
+				PassParameters->Range              = Params.Range;
+				PassParameters->RtResolution       = RtResolution;
+				PassParameters->PanoramaResolution = PanoramaResolution;
+
+				PassParameters->TextureSampler = TStaticSamplerState<ESamplerFilter::SF_Bilinear>::GetRHI();
 			}// Pass Values to shader, EPIC VERY COOL
 
 			auto GroupCount = FComputeShaderUtils::GetGroupCount(FIntVector(Params.X, Params.Y, Params.Z), FComputeShaderUtils::kGolden2DGroupSize);
@@ -146,8 +169,8 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 
 			
 			// The copy will fail if we don't have matching formats, let's check and make sure we do.
-			if (TargetTexture->Desc.Format == SS_TextureFormat) {
-				AddCopyTexturePass(GraphBuilder, TmpTexture, TargetTexture, FRHICopyTextureInfo());
+			if (TargetTexture->Desc.Format == RenderTextureFormat) {
+				AddCopyTexturePass(GraphBuilder, RtTextureWrite, TargetTexture, FRHICopyTextureInfo());
 			} else {
 				#if WITH_EDITOR
 					GEngine->AddOnScreenDebugMessage((uint64)42145125184, 6.f, FColor::Red, FString(TEXT("The provided render target has an incompatible format (Please change the RT format to: RGBA8).")));

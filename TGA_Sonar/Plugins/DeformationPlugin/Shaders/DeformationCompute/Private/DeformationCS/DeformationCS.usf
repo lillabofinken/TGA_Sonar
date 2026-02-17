@@ -1,18 +1,37 @@
 #include "/Engine/Public/Platform.ush"
 
-RWTexture2D<float3> RenderTarget;
-float testValue;
+RWTexture2D<float2> RenderTargetWrite;
+Texture2D  <float2> RenderTargetRead;
+Texture2D  <float2> Panorama;
+SamplerState        TextureSampler;
+float CurrentAngle;
+float UpdateAngle;
+float Range;
 
+int2 RtResolution;
+int2 PanoramaResolution;
 
+//TODO :: Need the HeightOffset on texture input 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void DeformationCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
-	// Simple checkerboard
-	int x = floor(DispatchThreadId.x / 16.f);
-	int y = floor(DispatchThreadId.y / 16.f);
-	int c = (x + y % 2) % 2;
+	const float2 UV = float2( DispatchThreadId.xy ) / float2( RtResolution );
 	
-	RenderTarget[DispatchThreadId.xy] = float3(c, testValue, c);
+	float2 outputValue = 0;//Panorama.Sample(TextureSampler, UV);
+
+	for(int i = 0; i < PanoramaResolution.y; i++)
+	{
+		float PanoramaValue = Panorama.Load(uint3(UV.x * PanoramaResolution.x, i, 0)).r / Range;
+		int Pixel = PanoramaValue * RtResolution.y;
+		if (Pixel == DispatchThreadId.y)
+		{
+			outputValue = outputValue + 1.0 / PanoramaResolution.y;
+		}
+	}
+	
+
+	
+	RenderTargetWrite[DispatchThreadId.xy] = outputValue;
 }
