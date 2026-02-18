@@ -134,15 +134,14 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 
 			auto PanoramaResolution = Params.Panorama->GetSizeXY();
 			FRDGTextureRef PanoramaTexture  = RegisterExternalTexture(GraphBuilder,Params.Panorama->GetRenderTargetTexture(),TEXT( "PanoramaTexture" ) );
-			//FRDGTextureDesc PanoramaDesc(FRDGTextureDesc::Create2D(Params.Panorama->GetSizeXY(), RenderTextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
-			//FRDGTextureRef  PanoramaTexture = GraphBuilder.CreateTexture(PanoramaDesc, TEXT("SonarInputTexture"));
 			
 			auto RtResolution = Params.RenderTarget->GetSizeXY();
 			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(RtResolution, RenderTextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
 			FRDGTextureRef RtTextureWrite = GraphBuilder.CreateTexture(Desc, TEXT("RtWrite"));
 			FRDGTextureRef RtTextureRead  = RegisterExternalTexture(GraphBuilder,Params.RenderTarget->GetRenderTargetTexture(),TEXT( "RtRead" ) );
 			FRDGTextureRef TargetTexture  = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("RtOutput"));
-			
+
+
 			{// Pass Values to shader, EPIC VERY COOL
 				
 				PassParameters->RenderTargetWrite  = GraphBuilder.CreateUAV(RtTextureWrite);
@@ -158,6 +157,8 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			}// Pass Values to shader, EPIC VERY COOL
 
 			auto GroupCount = FComputeShaderUtils::GetGroupCount(FIntVector(Params.X, Params.Y, Params.Z), FComputeShaderUtils::kGolden2DGroupSize);
+
+			AddCopyTexturePass(GraphBuilder, RtTextureRead, RtTextureWrite, FRHICopyTextureInfo());
 			GraphBuilder.AddPass(
 				RDG_EVENT_NAME("ExecuteDeformationCS"),
 				PassParameters,
@@ -166,9 +167,8 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			{
 				FComputeShaderUtils::Dispatch(RHICmdList, ComputeShader, *PassParameters, GroupCount);
 			});
-
 			
-			// The copy will fail if we don't have matching formats, let's check and make sure we do.
+			
 			if (TargetTexture->Desc.Format == RenderTextureFormat) {
 				AddCopyTexturePass(GraphBuilder, RtTextureWrite, TargetTexture, FRHICopyTextureInfo());
 			} else {
@@ -181,9 +181,6 @@ void FDeformationCSInterface::DispatchRenderThread(FRHICommandListImmediate& RHI
 			#if WITH_EDITOR
 				GEngine->AddOnScreenDebugMessage((uint64)42145125184, 6.f, FColor::Red, FString(TEXT("The compute shader has a problem.")));
 			#endif
-
-			// We exit here as we don't want to crash the game if the shader is not found or has an error.
-			
 		}
 	}
 
