@@ -17,7 +17,7 @@ void DeformationCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
-	RtResolution -= 1;
+	//RtResolution -= 1;
 	const float2 UV = float2( DispatchThreadId.xy ) / float2( RtResolution ) + float2(CurrentAngle / 360.0f,0);
 	const float  OffsetU = 16.0 / float(RtResolution.x);
 	const uint3  UVInt = uint3(frac(UV.x - OffsetU) * RtResolution.x, DispatchThreadId.y, 0);

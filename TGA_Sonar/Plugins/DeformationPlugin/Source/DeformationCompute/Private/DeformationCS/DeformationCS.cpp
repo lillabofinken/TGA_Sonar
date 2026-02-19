@@ -17,7 +17,7 @@ DECLARE_STATS_GROUP(TEXT("DeformationCS"), STATGROUP_DeformationCS, STATCAT_Adva
 DECLARE_CYCLE_STAT(TEXT("DeformationCS Execute"), STAT_DeformationCS_Execute, STATGROUP_DeformationCS);
 
 #define RenderTextureFormat PF_G16R16F
-#define InputTextureFormat PF_R16F
+#define InputTextureFormat PF_G16R16F
 // This class carries our parameter declarations and acts as the bridge between cpp and HLSL.
 class DEFORMATIONCOMPUTE_API FDeformationCS: public FGlobalShader
 {
