@@ -17,10 +17,10 @@ void DeformationCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
+	RtResolution -= 1;
 	const float2 UV = float2( DispatchThreadId.xy ) / float2( RtResolution ) + float2(CurrentAngle / 360.0f,0);
-
-	const int UVOffset = ( RtResolution - 16 ) * ( CurrentAngle / 360.0f );
-	const uint3  UVInt = DispatchThreadId + uint3( UVOffset, 0, 0 );
+	const float  OffsetU = 16.0 / float(RtResolution.x);
+	const uint3  UVInt = uint3(frac(UV.x - OffsetU) * RtResolution.x, DispatchThreadId.y, 0);
 	
 	float2 outputValue = 0;// Panorama.Sample(TextureSampler, UV);
 
