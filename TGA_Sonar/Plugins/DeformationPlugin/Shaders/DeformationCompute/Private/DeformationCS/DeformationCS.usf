@@ -26,11 +26,12 @@ void DeformationCS(
 
 	for(int i = 0; i < PanoramaResolution.y; i++)
 	{
-		float PanoramaValue = Panorama.Load(uint3(UV.x * PanoramaResolution.x, i, 0)).r / Range;
-		int Pixel = PanoramaValue * RtResolution.y;
+		float2 PanoramaValue = Panorama.Load(uint3(UV.x * PanoramaResolution.x, i, 0)).rg;
+		int Pixel = PanoramaValue.r * RtResolution.y;
 		if (Pixel == DispatchThreadId.y)
 		{
-			outputValue = outputValue + 1.0 / PanoramaResolution.y;
+			outputValue.x = outputValue.x + 1.0 / PanoramaResolution.y;
+			outputValue.y = max(outputValue.y, PanoramaValue.y);
 		}
 	}
 	
