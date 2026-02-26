@@ -7,6 +7,7 @@
 #include "Materials/MaterialRenderProxy.h"
 
 #include "DeformationCS/DeformationCS.h"
+#include "PassiveSonarCS/PassiveSonarCS.h"
 #include "DeformationCSLibrary.generated.h"
 //This is a static blueprint library that can be used to invoke our compute shader from blueprints.
 UCLASS()
@@ -19,4 +20,6 @@ public:
 	static void ExecuteRTComputeShader(UTextureRenderTarget2D* RT, UTextureRenderTarget2D* InputTexture, float CurrentAngle, float UpdateAngle, float Range);
 	
 	static void ExecuteRTComputeShader(FDeformationCSDispatchParams _params);
+	
+	static void ExecutePassiveSonarComputeShader(FPassiveSonarCSDispatchParams _params);
 };

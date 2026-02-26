@@ -21,3 +21,8 @@ void UDeformationCSLibrary::ExecuteRTComputeShader(FDeformationCSDispatchParams 
 {
 	FDeformationCSInterface::Dispatch(_params);
 }
+
+void UDeformationCSLibrary::ExecutePassiveSonarComputeShader(FPassiveSonarCSDispatchParams _params)
+{
+	FPassiveSonarCSInterface::Dispatch(_params);
+}
