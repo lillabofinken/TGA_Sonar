@@ -16,7 +16,8 @@ struct DEFORMATIONCOMPUTE_API FPassiveSonarCSDispatchParams
 
 	
 	FRenderTarget* RenderTarget;
-	
+	float time = 0;
+	float UpdateAmount = 0;
 	
 
 	FPassiveSonarCSDispatchParams(int x, int y, int z)

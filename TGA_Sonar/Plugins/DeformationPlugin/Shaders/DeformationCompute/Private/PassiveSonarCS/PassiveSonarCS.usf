@@ -1,16 +1,38 @@
 #include "/Engine/Public/Platform.ush"
 
-RWTexture2D<float3> RenderTarget;
+RWTexture2D<float> RenderTargetWrite;
+Texture2D  <float> RenderTargetRead;
+float Time;
+float UpdateAmount;
+
+int2 RtResolution;
+
+float Hash12(float2 p)
+{
+	float3 p3  = frac(float3(p.xyx) * 0.1031);
+	p3 += dot(p3, p3.yzx + 33.33);
+	return frac((p3.x + p3.y) * p3.z);
+}
 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void PassiveSonarCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
+	uint RowToUpdateTo = max(uint( float(RtResolution.y) *  UpdateAmount ),1);
+	
+	if (DispatchThreadId.y < RowToUpdateTo )
+	{
+		float random = Hash12(DispatchThreadId.xy + float2(Time * 2, Time * 5)) * 0.95;
+		RenderTargetWrite[DispatchThreadId.xy] = pow(random, 20);
+		return;
+	}
+	float textureValue = RenderTargetRead.Load(DispatchThreadId - uint3(0,RowToUpdateTo,0));
+	
 	// Simple checkerboard
 	int x = floor(DispatchThreadId.x / 16.f);
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTarget[DispatchThreadId.xy] = float3(c, c, c);
+	RenderTargetWrite[DispatchThreadId.xy] = textureValue;
 }

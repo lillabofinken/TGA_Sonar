@@ -16,6 +16,8 @@
 DECLARE_STATS_GROUP(TEXT("PassiveSonarCS"), STATGROUP_PassiveSonarCS, STATCAT_Advanced);
 DECLARE_CYCLE_STAT(TEXT("PassiveSonarCS Execute"), STAT_PassiveSonarCS_Execute, STATGROUP_PassiveSonarCS);
 
+#define RenderTextureFormat PF_R16F
+
 // This class carries our parameter declarations and acts as the bridge between cpp and HLSL.
 class DEFORMATIONCOMPUTE_API FPassiveSonarCS: public FGlobalShader
 {
@@ -54,8 +56,12 @@ public:
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
 		
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
-		
+		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D, RenderTargetWrite )
+		SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   RenderTargetRead  )
+		SHADER_PARAMETER                ( float,       Time              )
+		SHADER_PARAMETER                ( float,       UpdateAmount      )
+		SHADER_PARAMETER                ( FIntPoint,   RtResolution      )
+
 
 	END_SHADER_PARAMETER_STRUCT()
 
@@ -120,11 +126,18 @@ void FPassiveSonarCSInterface::DispatchRenderThread(FRHICommandListImmediate& RH
 		if (bIsShaderValid) {
 			FPassiveSonarCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FPassiveSonarCS::FParameters>();
 
-			
-			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), PF_B8G8R8A8, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
-			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("PassiveSonarCS_TempTexture"));
+			auto RtResolution = Params.RenderTarget->GetSizeXY();
+			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(RtResolution, RenderTextureFormat, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+			FRDGTextureRef RtWrite = GraphBuilder.CreateTexture(Desc, TEXT("PassiveSonarCS_Write"));
+			FRDGTextureRef RtRead = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("PassiveSonarCS_Read"));
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("PassiveSonarCS_RT"));
-			PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
+			{//PARAMS
+				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
+				PassParameters->RenderTargetRead  = RtRead;
+				PassParameters->Time              = Params.time;
+				PassParameters->UpdateAmount      = Params.UpdateAmount;
+				PassParameters->RtResolution      = RtResolution;
+			}//PARAMS
 			
 
 			auto GroupCount = FComputeShaderUtils::GetGroupCount(FIntVector(Params.X, Params.Y, Params.Z), FComputeShaderUtils::kGolden2DGroupSize);
@@ -139,8 +152,8 @@ void FPassiveSonarCSInterface::DispatchRenderThread(FRHICommandListImmediate& RH
 
 			
 			// The copy will fail if we don't have matching formats, let's check and make sure we do.
-			if (TargetTexture->Desc.Format == PF_B8G8R8A8) {
-				AddCopyTexturePass(GraphBuilder, TmpTexture, TargetTexture, FRHICopyTextureInfo());
+			if (TargetTexture->Desc.Format == RenderTextureFormat) {
+				AddCopyTexturePass(GraphBuilder, RtWrite, TargetTexture, FRHICopyTextureInfo());
 			} else {
 				#if WITH_EDITOR
 					GEngine->AddOnScreenDebugMessage((uint64)42145125184, 6.f, FColor::Red, FString(TEXT("The provided render target has an incompatible format (Please change the RT format to: RGBA8).")));

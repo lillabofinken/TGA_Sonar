@@ -25,12 +25,17 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTextureRenderTarget2D*       RenderTarget;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTextureRenderTarget2D* RenderTarget;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) float Framerate = 24;
+	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) float WaterfallSeconds = 10;
 	UPROPERTY()	TArray<USceneComponent*> TrackedObjects;
 
 	UFUNCTION( BlueprintCallable ) void AddTrackedObjects  ( TArray<USceneComponent*> _trackedComponent);
 	UFUNCTION( BlueprintCallable ) void AddTrackedObject   ( USceneComponent*         _trackedComponent);
-	
+
+private:
+	void updatePassiveSonar(float _deltaTime);
+	float framerateTime = 0;
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static UPassiveSonarManager* GetDeformationManager();

@@ -2,6 +2,7 @@
 
 
 #include "PassiveSonarManager.h"
+#include "PassiveSonarCS/PassiveSonarCS.h"
 
 // Sets default values for this component's properties
 UPassiveSonarManager::UPassiveSonarManager()
@@ -9,7 +10,7 @@ UPassiveSonarManager::UPassiveSonarManager()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
-
+	DeformationManager = this;
 	// ...
 }
 
@@ -28,7 +29,8 @@ void UPassiveSonarManager::BeginPlay()
 void UPassiveSonarManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
+	updatePassiveSonar(DeltaTime);
+	
 	// ...
 }
 
@@ -38,6 +40,27 @@ void UPassiveSonarManager::AddTrackedObjects(TArray<USceneComponent*> _trackedCo
 
 void UPassiveSonarManager::AddTrackedObject(USceneComponent* _trackedComponent)
 {
+}
+
+void UPassiveSonarManager::updatePassiveSonar(float _deltaTime)
+{
+	if ( !RenderTarget )
+		return;
+
+	framerateTime += _deltaTime;
+	const float frameStep = 1.0f / Framerate;
+	const float SonarStepSize = frameStep / WaterfallSeconds;
+	
+	while ( framerateTime >= frameStep )
+	{
+		FPassiveSonarCSDispatchParams params(RenderTarget->SizeX, RenderTarget->SizeY,1);
+		params.RenderTarget = RenderTarget->GameThread_GetRenderTargetResource();
+		params.time = GetWorld()->GetTimeSeconds() + framerateTime;
+		params.UpdateAmount = SonarStepSize;
+		UDeformationCSLibrary::ExecutePassiveSonarComputeShader(params);
+
+		framerateTime -= frameStep;
+	}
 }
 
 UPassiveSonarManager* UPassiveSonarManager::GetDeformationManager()
