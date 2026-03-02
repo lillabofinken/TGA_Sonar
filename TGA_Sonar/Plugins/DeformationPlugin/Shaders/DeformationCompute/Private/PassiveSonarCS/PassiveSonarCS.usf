@@ -20,11 +20,18 @@ void PassiveSonarCS(
 	uint GroupIndex : SV_GroupIndex )
 {
 	uint RowToUpdateTo = max(uint( float(RtResolution.y) *  UpdateAmount ),1);
-	
+	float2 uv = float2(DispatchThreadId.xy) / float2(RtResolution);
+	float FracTest = sin(Time * 0.5) * 0.5 + 0.5;
+	float DistanceFromX = 1 - abs(uv.x - 0.5) * 1.0;
 	if (DispatchThreadId.y < RowToUpdateTo )
 	{
-		float random = Hash12(DispatchThreadId.xy + float2(Time * 2, Time * 5)) * 0.95;
-		RenderTargetWrite[DispatchThreadId.xy] = pow(random, 20);
+		float BackgroundNoise = Hash12(DispatchThreadId.xy + float2(Time * 2, Time * 5)) * 0.90;
+		BackgroundNoise = pow(BackgroundNoise, 10);
+
+		float ObjectNoise = Hash12(DispatchThreadId.xy + float2(Time * 3, Time * 6)) * 0.95;
+		ObjectNoise = pow(ObjectNoise, max(0.5, 20 * (1.0 - FracTest)));
+		
+		RenderTargetWrite[DispatchThreadId.xy] = pow(DistanceFromX, max(0.5, 10 * FracTest)) * ObjectNoise;
 		return;
 	}
 	float textureValue = RenderTargetRead.Load(DispatchThreadId - uint3(0,RowToUpdateTo,0));
