@@ -13,6 +13,20 @@ float Hash12(float2 p)
 	p3 += dot(p3, p3.yzx + 33.33);
 	return frac((p3.x + p3.y) * p3.z);
 }
+float ThreeWayLerp(float min, float mid, float max, float midValue, float Value)
+{
+	float alphaOne = smoothstep( min, mid, Value );
+	float alphaTwo = smoothstep( mid, max, Value );
+
+	float output = lerp( 0,      midValue, alphaOne );
+	      output = lerp( output, 1,        alphaOne );
+
+	return output;
+}
+float OneMinusX(float input)
+{
+	return 1.0 - input;
+}
 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void PassiveSonarCS(
@@ -21,17 +35,25 @@ void PassiveSonarCS(
 {
 	uint RowToUpdateTo = max(uint( float(RtResolution.y) *  UpdateAmount ),1);
 	float2 uv = float2(DispatchThreadId.xy) / float2(RtResolution);
+
+//Temp
 	float FracTest = sin(Time * 0.5) * 0.5 + 0.5;
-	float DistanceFromX = 1 - abs(uv.x - 0.5) * 1.0;
+	float DistanceFromX = abs(uv.x - 0.5) * 1.0;
+	float FlippedDistanceFromX = 1 - DistanceFromX;
+//Temp
+	
 	if (DispatchThreadId.y < RowToUpdateTo )
 	{
 		float BackgroundNoise = Hash12(DispatchThreadId.xy + float2(Time * 2, Time * 5)) * 0.90;
 		BackgroundNoise = pow(BackgroundNoise, 10);
 
 		float ObjectNoise = Hash12(DispatchThreadId.xy + float2(Time * 3, Time * 6)) * 0.95;
-		ObjectNoise = pow(ObjectNoise, max(0.5, 20 * (1.0 - FracTest)));
-		
-		RenderTargetWrite[DispatchThreadId.xy] = pow(DistanceFromX, max(0.5, 10 * FracTest)) * ObjectNoise;
+		//ObjectNoise = pow(ObjectNoise, max(0.5, 20 * (1.0 - FracTest)));
+		float sharpness = 1 + FracTest * 8;
+		float NoiseFloor = 0.75 * OneMinusX(FracTest);
+		float min = NoiseFloor + ( 1 - pow( FlippedDistanceFromX, sharpness ) ) * ( 1 - NoiseFloor );
+		ObjectNoise = smoothstep(min, 1, ObjectNoise);
+		RenderTargetWrite[DispatchThreadId.xy] = ObjectNoise;//pow(DistanceFromX, max(0.5, 10 * FracTest)) * ObjectNoise;
 		return;
 	}
 	float textureValue = RenderTargetRead.Load(DispatchThreadId - uint3(0,RowToUpdateTo,0));
