@@ -5,10 +5,26 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "DeformationCSLibrary.h"
+#include "NoiseEmitterComponent.h"
 #include "PassiveSonarManager.generated.h"
 
 
+struct NoiseEmitterDataStruct
+{
+	FVector Position;
+	float Range;
+	float Sharpness;
+};
+
+struct NoiseEmitterStruct
+{
+	NoiseEmitterDataStruct data;
+	UNoiseEmitterComponent* noiseEmitter;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+
+
 class TGA_SONAR_API UPassiveSonarManager : public UActorComponent
 {
 	GENERATED_BODY()
