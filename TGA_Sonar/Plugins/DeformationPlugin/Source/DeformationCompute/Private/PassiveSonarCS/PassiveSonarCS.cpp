@@ -55,12 +55,13 @@ public:
 
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
-		
-		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D, RenderTargetWrite )
-		SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   RenderTargetRead  )
-		SHADER_PARAMETER                ( float,       Time              )
-		SHADER_PARAMETER                ( float,       UpdateAmount      )
-		SHADER_PARAMETER                ( FIntPoint,   RtResolution      )
+		SHADER_PARAMETER_STRUCT_ARRAY   ( NoiseEmitterDataStruct, EmitterData, [NoiseEmitterMaxAmount] )
+		SHADER_PARAMETER                ( int,                    EmitterAmount     )
+		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D,            RenderTargetWrite )
+		SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,              RenderTargetRead  )
+		SHADER_PARAMETER                ( float,                  Time              )
+		SHADER_PARAMETER                ( float,                  UpdateAmount      )
+		SHADER_PARAMETER                ( FIntPoint,              RtResolution      )
 
 
 	END_SHADER_PARAMETER_STRUCT()
@@ -132,6 +133,13 @@ void FPassiveSonarCSInterface::DispatchRenderThread(FRHICommandListImmediate& RH
 			FRDGTextureRef RtRead = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("PassiveSonarCS_Read"));
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("PassiveSonarCS_RT"));
 			{//PARAMS
+				
+				for( int i = 0; i < /*Params.ObjectAmount*/ 64; i++ )
+				{
+					PassParameters->EmitterData[ i ] = Params.NoiseEmitters[ i ];				
+				}
+				PassParameters->EmitterAmount     = Params.EmitterAmount;				
+				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
 				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
 				PassParameters->RenderTargetRead  = RtRead;
 				PassParameters->Time              = Params.time;

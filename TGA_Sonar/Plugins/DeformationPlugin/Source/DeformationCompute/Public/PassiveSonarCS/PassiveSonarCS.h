@@ -6,7 +6,20 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/MaterialRenderProxy.h"
 
+#define NoiseEmitterMaxAmount
 //#include "PassiveSonarCS.generated.h"
+struct NoiseEmitterDataStruct
+{
+	FVector Position;
+	float Range;
+	float Sharpness;
+	NoiseEmitterDataStruct()
+	{
+		Position  = FVector( 0 );
+		Range     = 0;
+		Sharpness = 0;	
+	}
+};
 
 struct DEFORMATIONCOMPUTE_API FPassiveSonarCSDispatchParams
 {
@@ -15,10 +28,11 @@ struct DEFORMATIONCOMPUTE_API FPassiveSonarCSDispatchParams
 	int Z;
 
 	
-	FRenderTarget* RenderTarget;
+	FRenderTarget* RenderTarget = nullptr;
 	float time = 0;
 	float UpdateAmount = 0;
-	
+	TArray<NoiseEmitterDataStruct> NoiseEmitters[NoiseEmitterMaxAmount];
+	int EmitterAmount = 0;
 
 	FPassiveSonarCSDispatchParams(int x, int y, int z)
 		: X(x)
@@ -27,6 +41,7 @@ struct DEFORMATIONCOMPUTE_API FPassiveSonarCSDispatchParams
 	{
 	}
 };
+
 
 // This is a public interface that we define so outside code can invoke our compute shader.
 class DEFORMATIONCOMPUTE_API FPassiveSonarCSInterface {

@@ -9,13 +9,6 @@
 #include "PassiveSonarManager.generated.h"
 
 
-struct NoiseEmitterDataStruct
-{
-	FVector Position;
-	float Range;
-	float Sharpness;
-};
-
 struct NoiseEmitterStruct
 {
 	NoiseEmitterDataStruct data;
