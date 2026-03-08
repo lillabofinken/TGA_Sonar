@@ -37,12 +37,12 @@ public:
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) UTextureRenderTarget2D* RenderTarget;
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) float Framerate = 24;
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) float WaterfallSeconds = 10;
-	UPROPERTY()	TArray<USceneComponent*> TrackedObjects;
+	UPROPERTY()	TArray<UNoiseEmitterComponent*> TrackedObjects;
 
-	UFUNCTION( BlueprintCallable ) void AddTrackedObjects   ( TArray<USceneComponent*> _trackedComponent);
-	UFUNCTION( BlueprintCallable ) void AddTrackedObject    ( USceneComponent*         _trackedComponent);
-	UFUNCTION( BlueprintCallable ) void RemoveTrackedObjects( TArray<USceneComponent*> _trackedComponent);
-	UFUNCTION( BlueprintCallable ) void RemoveTrackedObject ( USceneComponent*         _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void AddTrackedObjects   ( TArray<UNoiseEmitterComponent*> _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void AddTrackedObject    ( UNoiseEmitterComponent*         _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void RemoveTrackedObjects( TArray<UNoiseEmitterComponent*> _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void RemoveTrackedObject ( UNoiseEmitterComponent*         _trackedComponent);
 
 private:
 	void updatePassiveSonar(float _deltaTime);

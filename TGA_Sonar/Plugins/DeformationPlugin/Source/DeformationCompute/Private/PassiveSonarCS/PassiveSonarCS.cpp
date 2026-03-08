@@ -63,12 +63,15 @@ END_SHADER_PARAMETER_STRUCT()
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
 		SHADER_PARAMETER_STRUCT_ARRAY   ( NoiseEmitterDataStruct, EmitterData, [NoiseEmitterMaxAmount] )
-		SHADER_PARAMETER                ( int,                    EmitterAmount     )
+		SHADER_PARAMETER                ( int,                    EmitterAmount                        )
+	
 		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D,            RenderTargetWrite )
 		SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,              RenderTargetRead  )
-		SHADER_PARAMETER                ( float,                  Time              )
-		SHADER_PARAMETER                ( float,                  UpdateAmount      )
 		SHADER_PARAMETER                ( FIntPoint,              RtResolution      )
+	
+		SHADER_PARAMETER                ( float,                  Time         )
+		SHADER_PARAMETER                ( float,                  UpdateAmount )
+		SHADER_PARAMETER                ( FMatrix44f,             PlayerMatrix )
 
 
 	END_SHADER_PARAMETER_STRUCT()
@@ -148,13 +151,13 @@ void FPassiveSonarCSInterface::DispatchRenderThread(FRHICommandListImmediate& RH
 					PassParameters->EmitterData[ i ].Position = FVector3f( Params.NoiseEmitters[ 0 ].Position );
 					PassParameters->EmitterData[ i ].Sharpness = Params.NoiseEmitters[ 0 ].Sharpness;
 				}
-				PassParameters->EmitterAmount = CopyCount;
-				PassParameters->EmitterAmount     = Params.EmitterAmount;				
+				PassParameters->EmitterAmount     = CopyCount;			
 				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
 				PassParameters->RenderTargetRead  = RtRead;
 				PassParameters->Time              = Params.time;
 				PassParameters->UpdateAmount      = Params.UpdateAmount;
 				PassParameters->RtResolution      = RtResolution;
+				PassParameters->PlayerMatrix      = Params.PlayerMatrix;
 			}//PARAMS
 			
 

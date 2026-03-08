@@ -33,6 +33,7 @@ struct DEFORMATIONCOMPUTE_API FPassiveSonarCSDispatchParams
 	float UpdateAmount = 0;
 	TArray<NoiseEmitterDataStruct> NoiseEmitters;
 	int EmitterAmount = 0;
+	FMatrix44f PlayerMatrix;
 
 	FPassiveSonarCSDispatchParams(int x, int y, int z)
 		: X(x)

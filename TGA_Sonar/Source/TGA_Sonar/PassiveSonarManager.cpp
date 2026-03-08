@@ -34,7 +34,7 @@ void UPassiveSonarManager::TickComponent(float DeltaTime, ELevelTick TickType, F
 	// ...
 }
 
-void UPassiveSonarManager::AddTrackedObjects(TArray<USceneComponent*> _trackedComponents)
+void UPassiveSonarManager::AddTrackedObjects(TArray<UNoiseEmitterComponent*> _trackedComponents)
 {
 	for( auto comp : _trackedComponents )
 	{
@@ -42,12 +42,12 @@ void UPassiveSonarManager::AddTrackedObjects(TArray<USceneComponent*> _trackedCo
 	}
 }
 
-void UPassiveSonarManager::AddTrackedObject(USceneComponent* _trackedComponent)
+void UPassiveSonarManager::AddTrackedObject(UNoiseEmitterComponent* _trackedComponent)
 {
 	TrackedObjects.Add( _trackedComponent );
 }
 
-void UPassiveSonarManager::RemoveTrackedObjects( TArray<USceneComponent*> _trackedComponents )
+void UPassiveSonarManager::RemoveTrackedObjects( TArray<UNoiseEmitterComponent*> _trackedComponents )
 {
 	for( auto comp : _trackedComponents )
 	{
@@ -55,7 +55,7 @@ void UPassiveSonarManager::RemoveTrackedObjects( TArray<USceneComponent*> _track
 	}
 }
 
-void UPassiveSonarManager::RemoveTrackedObject( USceneComponent* _trackedComponent )
+void UPassiveSonarManager::RemoveTrackedObject( UNoiseEmitterComponent* _trackedComponent )
 {
 	TrackedObjects.Remove( _trackedComponent );
 }
@@ -69,12 +69,24 @@ void UPassiveSonarManager::updatePassiveSonar(float _deltaTime)
 	const float frameStep = 1.0f / Framerate;
 	const float SonarStepSize = frameStep / WaterfallSeconds;
 	
-	while ( framerateTime >= frameStep )
+	FPassiveSonarCSDispatchParams params(RenderTarget->SizeX, RenderTarget->SizeY,1);
+	params.RenderTarget = RenderTarget->GameThread_GetRenderTargetResource();
+	params.time = GetWorld()->GetTimeSeconds() + framerateTime;
+	params.UpdateAmount = SonarStepSize;
+	params.PlayerMatrix = FMatrix44f( GetOwner()->GetTransform().ToMatrixNoScale() );
+
+	for( const auto object : TrackedObjects )
 	{
-		FPassiveSonarCSDispatchParams params(RenderTarget->SizeX, RenderTarget->SizeY,1);
-		params.RenderTarget = RenderTarget->GameThread_GetRenderTargetResource();
-		params.time = GetWorld()->GetTimeSeconds() + framerateTime;
-		params.UpdateAmount = SonarStepSize;
+		NoiseEmitterDataStruct emitter;
+		emitter.Position = object->GetComponentLocation();
+		emitter.Range = object->Range;
+		emitter.Sharpness = object->Sharpness;
+		
+		params.NoiseEmitters.Add( emitter );
+	}
+
+	while( framerateTime >= frameStep )
+	{
 		UDeformationCSLibrary::ExecutePassiveSonarComputeShader(params);
 
 		framerateTime -= frameStep;
@@ -85,4 +97,3 @@ UPassiveSonarManager* UPassiveSonarManager::GetDeformationManager()
 {
 	return DeformationManager;
 }
-
