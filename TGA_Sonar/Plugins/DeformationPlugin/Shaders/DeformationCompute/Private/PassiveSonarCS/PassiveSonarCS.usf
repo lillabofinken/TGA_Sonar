@@ -7,6 +7,14 @@ float UpdateAmount;
 
 int2 RtResolution;
 
+struct NoiseEmitterDataStruct
+{
+	float3 Position;
+	float Range;
+	float Sharpness;
+	float _padding; // Manually add padding float to align 16 bytes, if needed.
+};
+
 float Hash12(float2 p)
 {
 	float3 p3  = frac(float3(p.xyx) * 0.1031);

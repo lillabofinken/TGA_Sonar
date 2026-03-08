@@ -32,6 +32,13 @@ public:
 		FPassiveSonarCS_Perm_TEST
 	>;
 
+	BEGIN_SHADER_PARAMETER_STRUCT(NoiseEmitterDataStruct, )
+	SHADER_PARAMETER(FVector3f, Position)
+	SHADER_PARAMETER(float, Range)
+	SHADER_PARAMETER(float, Sharpness)
+	SHADER_PARAMETER(float, Padding) // Add to align to 16 bytes
+END_SHADER_PARAMETER_STRUCT()
+	
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		/*
 		* Here's where you define one or more of the input parameters for your shader.
@@ -134,12 +141,15 @@ void FPassiveSonarCSInterface::DispatchRenderThread(FRHICommandListImmediate& RH
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("PassiveSonarCS_RT"));
 			{//PARAMS
 				
-				for( int i = 0; i < /*Params.ObjectAmount*/ 64; i++ )
+				int32 CopyCount = FMath::Min(Params.NoiseEmitters.Num(), NoiseEmitterMaxAmount);
+				for ( int32 i = 0; i < CopyCount; ++i )
 				{
-					PassParameters->EmitterData[ i ] = Params.NoiseEmitters[ i ];				
+					PassParameters->EmitterData[ i ].Range = Params.NoiseEmitters[ 0 ].Range;
+					PassParameters->EmitterData[ i ].Position = FVector3f( Params.NoiseEmitters[ 0 ].Position );
+					PassParameters->EmitterData[ i ].Sharpness = Params.NoiseEmitters[ 0 ].Sharpness;
 				}
+				PassParameters->EmitterAmount = CopyCount;
 				PassParameters->EmitterAmount     = Params.EmitterAmount;				
-				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
 				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
 				PassParameters->RenderTargetRead  = RtRead;
 				PassParameters->Time              = Params.time;

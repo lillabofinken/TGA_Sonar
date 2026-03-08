@@ -34,12 +34,30 @@ void UPassiveSonarManager::TickComponent(float DeltaTime, ELevelTick TickType, F
 	// ...
 }
 
-void UPassiveSonarManager::AddTrackedObjects(TArray<USceneComponent*> _trackedComponent)
+void UPassiveSonarManager::AddTrackedObjects(TArray<USceneComponent*> _trackedComponents)
 {
+	for( auto comp : _trackedComponents )
+	{
+		TrackedObjects.Add( comp );
+	}
 }
 
 void UPassiveSonarManager::AddTrackedObject(USceneComponent* _trackedComponent)
 {
+	TrackedObjects.Add( _trackedComponent );
+}
+
+void UPassiveSonarManager::RemoveTrackedObjects( TArray<USceneComponent*> _trackedComponents )
+{
+	for( auto comp : _trackedComponents )
+	{
+		TrackedObjects.Remove( comp );
+	}
+}
+
+void UPassiveSonarManager::RemoveTrackedObject( USceneComponent* _trackedComponent )
+{
+	TrackedObjects.Remove( _trackedComponent );
 }
 
 void UPassiveSonarManager::updatePassiveSonar(float _deltaTime)

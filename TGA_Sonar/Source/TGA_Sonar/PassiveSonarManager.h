@@ -39,8 +39,10 @@ public:
 	UPROPERTY( EditAnywhere, Category = "ImportantVariables" ) float WaterfallSeconds = 10;
 	UPROPERTY()	TArray<USceneComponent*> TrackedObjects;
 
-	UFUNCTION( BlueprintCallable ) void AddTrackedObjects  ( TArray<USceneComponent*> _trackedComponent);
-	UFUNCTION( BlueprintCallable ) void AddTrackedObject   ( USceneComponent*         _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void AddTrackedObjects   ( TArray<USceneComponent*> _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void AddTrackedObject    ( USceneComponent*         _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void RemoveTrackedObjects( TArray<USceneComponent*> _trackedComponent);
+	UFUNCTION( BlueprintCallable ) void RemoveTrackedObject ( USceneComponent*         _trackedComponent);
 
 private:
 	void updatePassiveSonar(float _deltaTime);

@@ -6,7 +6,7 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/MaterialRenderProxy.h"
 
-#define NoiseEmitterMaxAmount
+#define NoiseEmitterMaxAmount 32
 //#include "PassiveSonarCS.generated.h"
 struct NoiseEmitterDataStruct
 {
@@ -31,7 +31,7 @@ struct DEFORMATIONCOMPUTE_API FPassiveSonarCSDispatchParams
 	FRenderTarget* RenderTarget = nullptr;
 	float time = 0;
 	float UpdateAmount = 0;
-	TArray<NoiseEmitterDataStruct> NoiseEmitters[NoiseEmitterMaxAmount];
+	TArray<NoiseEmitterDataStruct> NoiseEmitters;
 	int EmitterAmount = 0;
 
 	FPassiveSonarCSDispatchParams(int x, int y, int z)
