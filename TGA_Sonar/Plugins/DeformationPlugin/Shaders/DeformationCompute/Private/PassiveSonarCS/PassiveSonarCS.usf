@@ -79,14 +79,17 @@ void PassiveSonarCS(
 	if (DispatchThreadId.y < RowToUpdateTo )
 	{
 		float BackgroundNoise = Hash12(DispatchThreadId.xy + float2(Time * 2, Time * 5)) * 0.90;
-		BackgroundNoise = pow(BackgroundNoise, 10);
+		BackgroundNoise = pow(BackgroundNoise, 15) * 0.5;
 
 		float finalNoise = 0;
 		for( int i = 0; i < EmitterAmount; i++ )
 		{
-			const float3 PlayerTargetDifferenceVector = Positions[ 0 ].xyz - PlayerPosition;
+			const float3 PlayerTargetDifferenceVector = Positions[ i ].xyz - PlayerPosition;
 			const float2 TargetDirection              = normalize( PlayerTargetDifferenceVector.xy );
-			const float  DistanceToTargetNormalized   = saturate ( length( PlayerTargetDifferenceVector ) / Positions[ i ].w );
+			const float  FlippedDistanceToTargetNormalized   = 1.0 - saturate ( length( PlayerTargetDifferenceVector ) / Positions[ i ].w );
+			const float  Volume = pow( FlippedDistanceToTargetNormalized, 4 ); 
+			float FracTest = sin(Time * 0.5) * 0.5 + 0.5;
+			FracTest = Volume;
 			
 			const float TargetAngle            = GetAngleDifference( PlayerForward.xy, TargetDirection );
 			const float UvAngleTarget          = ( TargetAngle + AngleRange * 0.5 ) / AngleRange;
@@ -96,15 +99,16 @@ void PassiveSonarCS(
 
 			float ObjectNoise = Hash12(DispatchThreadId.xy + float2(Time * 3, Time * 6)) * 0.95;
 			//ObjectNoise = pow(ObjectNoise, max(0.5, 20 * (1.0 - FracTest)));
-			float sharpness = 1 + DistanceToTargetNormalized * 8;
-			float NoiseFloor = 0.75 * (1.0 - DistanceToTargetNormalized );
+			float sharpness = 1 + pow( FracTest, 2 ) * 12;
+			float NoiseFloor = 0.75 * (1.0 - FracTest );
 			float min = NoiseFloor + ( 1 - pow( UvAngleDistanceFlipped, sharpness ) ) * ( 1 - NoiseFloor );
 			ObjectNoise = smoothstep(min, 1, ObjectNoise);
 
-			finalNoise += ObjectNoise * UvAngleDistanceMask;
+			finalNoise += ObjectNoise * UvAngleDistanceMask * Volume * 0.3;
+			//finalNoise = frac( length( PlayerTargetDifferenceVector ) / Positions[ i ].w );
 		}
 
-		RenderTargetWrite[DispatchThreadId.xy] = finalNoise;//pow(DistanceFromX, max(0.5, 10 * FracTest)) * ObjectNoise;
+		RenderTargetWrite[DispatchThreadId.xy] = finalNoise + BackgroundNoise;//pow(DistanceFromX, max(0.5, 10 * FracTest)) * ObjectNoise;
 		return;
 	}
 	float textureValue = RenderTargetRead.Load(DispatchThreadId - uint3(0,RowToUpdateTo,0));
