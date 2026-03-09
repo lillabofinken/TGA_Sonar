@@ -6,7 +6,6 @@
 #include "Engine/TextureRenderTarget2D.h"
 #include "Materials/MaterialRenderProxy.h"
 
-#define NoiseEmitterMaxAmount 32
 //#include "PassiveSonarCS.generated.h"
 struct NoiseEmitterDataStruct
 {

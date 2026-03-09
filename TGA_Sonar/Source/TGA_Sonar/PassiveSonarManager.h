@@ -49,7 +49,7 @@ private:
 	float framerateTime = 0;
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static UPassiveSonarManager* GetDeformationManager();
+	static UPassiveSonarManager* GetPassiveSonarManager();
 private:
-	inline static UPassiveSonarManager* DeformationManager = nullptr;
+	inline static UPassiveSonarManager* PassiveSonarManager = nullptr;
 };

@@ -1,14 +1,17 @@
 #include "/Engine/Public/Platform.ush"
 
-struct NoiseEmitterDataStruct
-{
-	float3 Position;
-	float Range;
-	float Sharpness;
-	float _padding;
-};
+//struct NoiseEmitterDataStructCS
+//{
+//	float4 Position;
+//
+//	float Range;
+//	float Sharpness;
+//	
+//	float2 Padding;
+//};
 
-NoiseEmitterDataStruct EmitterData[32];
+//NoiseEmitterDataStructCS EmitterData[8];
+float4 Positions[8];
 int                    EmitterAmount;
 
 RWTexture2D<float> RenderTargetWrite;
@@ -18,10 +21,6 @@ int2               RtResolution;
 float    Time;
 float    UpdateAmount;
 float4x4 PlayerMatrix;
-
-
-const float AngleRange = 180;
-
 
 float GetAngleDifference( float2 Forward, float2 Target )
 {
@@ -72,9 +71,10 @@ void PassiveSonarCS(
 {
 	uint RowToUpdateTo = max(uint( float(RtResolution.y) *  UpdateAmount ),1);
 	float2 uv = float2(DispatchThreadId.xy) / float2(RtResolution);
-	const float3 PlayerPosition = GetPositionFromMatrix44( PlayerMatrix );
+	const float3 PlayerPosition = float3(0,0,0);//GetPositionFromMatrix44( PlayerMatrix );
 	const float3 PlayerForward = GetForwardFromMatrix44( PlayerMatrix );
 
+	const float AngleRange = 180.0;
 
 	if (DispatchThreadId.y < RowToUpdateTo )
 	{
@@ -84,27 +84,24 @@ void PassiveSonarCS(
 		float finalNoise = 0;
 		for( int i = 0; i < EmitterAmount; i++ )
 		{
-			const float3 PlayerTargetDifferenceVector = EmitterData[ i ].Position - PlayerPosition;
-			const float2 TargetDirection =  normalize(  PlayerTargetDifferenceVector.xy );
-			const float  DistanceToTarget = length( PlayerTargetDifferenceVector );
+			const float3 PlayerTargetDifferenceVector = Positions[ 0 ].xyz - PlayerPosition;
+			const float2 TargetDirection              = normalize( PlayerTargetDifferenceVector.xy );
+			const float  DistanceToTargetNormalized   = saturate ( length( PlayerTargetDifferenceVector ) / Positions[ i ].w );
 			
-			const float TargetAngle = GetAngleDifference( PlayerForward.xy, TargetDirection );
-			const float UvTargetDirection = ( TargetAngle - AngleRange * 0.5 ) / AngleRange;
-			
-			//Temp
-			float FracTest = sin(Time * 0.5) * 0.5 + 0.5;
-			float DistanceFromX = abs(uv.x - 0.5) * 1.0;
-			float FlippedDistanceFromX = 1 - DistanceFromX;
-			//Temp
+			const float TargetAngle            = GetAngleDifference( PlayerForward.xy, TargetDirection );
+			const float UvAngleTarget          = ( TargetAngle - AngleRange * 0.5 ) / AngleRange;
+			const float UvAngleDistance        = abs( UvAngleTarget - uv.x ); 
+			const float UvAngleDistanceFlipped = 1.0 - UvAngleDistance; 
+			const float UvAngleDistanceMask    = 1.0 - step( 1.0, UvAngleDistance ); 
 
 			float ObjectNoise = Hash12(DispatchThreadId.xy + float2(Time * 3, Time * 6)) * 0.95;
 			//ObjectNoise = pow(ObjectNoise, max(0.5, 20 * (1.0 - FracTest)));
-			float sharpness = 1 + FracTest * 8;
-			float NoiseFloor = 0.75 * OneMinusX(FracTest);
-			float min = NoiseFloor + ( 1 - pow( FlippedDistanceFromX, sharpness ) ) * ( 1 - NoiseFloor );
+			float sharpness = 1 + DistanceToTargetNormalized * 8;
+			float NoiseFloor = 0.75 * (1.0 - DistanceToTargetNormalized );
+			float min = NoiseFloor + ( 1 - pow( UvAngleDistanceFlipped, sharpness ) ) * ( 1 - NoiseFloor );
 			ObjectNoise = smoothstep(min, 1, ObjectNoise);
 
-			finalNoise += ObjectNoise;
+			finalNoise += ObjectNoise + UvAngleDistanceMask;
 		}
 
 		RenderTargetWrite[DispatchThreadId.xy] = finalNoise;//pow(DistanceFromX, max(0.5, 10 * FracTest)) * ObjectNoise;
@@ -117,6 +114,6 @@ void PassiveSonarCS(
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTargetWrite[DispatchThreadId.xy] = frac( GetPositionFromMatrix44( PlayerMatrix ).x / 1000.0 );
-	//RenderTargetWrite[DispatchThreadId.xy] = textureValue;
+	//RenderTargetWrite[DispatchThreadId.xy] = frac( GetPositionFromMatrix44( PlayerMatrix ).x / 1000.0 );
+	RenderTargetWrite[DispatchThreadId.xy] = textureValue;
 }

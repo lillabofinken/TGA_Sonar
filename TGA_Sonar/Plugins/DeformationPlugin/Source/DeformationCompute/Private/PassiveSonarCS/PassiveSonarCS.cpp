@@ -32,12 +32,12 @@ public:
 		FPassiveSonarCS_Perm_TEST
 	>;
 
-	BEGIN_SHADER_PARAMETER_STRUCT(NoiseEmitterDataStruct, )
-	SHADER_PARAMETER(FVector3f, Position)
-	SHADER_PARAMETER(float, Range)
-	SHADER_PARAMETER(float, Sharpness)
-	SHADER_PARAMETER(float, Padding) // Add to align to 16 bytes
-END_SHADER_PARAMETER_STRUCT()
+	//BEGIN_SHADER_PARAMETER_STRUCT(NoiseEmitterDataStructCS, )
+	//	SHADER_PARAMETER(FVector4f, Position)
+	//	SHADER_PARAMETER(float, Range)
+	//	SHADER_PARAMETER(float, Sharpness)
+	//	SHADER_PARAMETER(FVector2f, Padding)
+	//END_SHADER_PARAMETER_STRUCT()
 	
 	BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
 		/*
@@ -62,8 +62,9 @@ END_SHADER_PARAMETER_STRUCT()
 
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
-		SHADER_PARAMETER_STRUCT_ARRAY   ( NoiseEmitterDataStruct, EmitterData, [NoiseEmitterMaxAmount] )
-		SHADER_PARAMETER                ( int,                    EmitterAmount                        )
+		//SHADER_PARAMETER_STRUCT_ARRAY   ( NoiseEmitterDataStructCS, EmitterData, [8] )
+	    SHADER_PARAMETER_ARRAY          ( FVector4f, Positions,[8]                  )
+		SHADER_PARAMETER                ( int,                    EmitterAmount     )
 	
 		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D,            RenderTargetWrite )
 		SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,              RenderTargetRead  )
@@ -144,12 +145,21 @@ void FPassiveSonarCSInterface::DispatchRenderThread(FRHICommandListImmediate& RH
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("PassiveSonarCS_RT"));
 			{//PARAMS
 				
-				int32 CopyCount = FMath::Min(Params.NoiseEmitters.Num(), NoiseEmitterMaxAmount);
+				int32 CopyCount = FMath::Min(Params.NoiseEmitters.Num(), 8);
 				for ( int32 i = 0; i < CopyCount; ++i )
 				{
-					PassParameters->EmitterData[ i ].Range = Params.NoiseEmitters[ 0 ].Range;
-					PassParameters->EmitterData[ i ].Position = FVector3f( Params.NoiseEmitters[ 0 ].Position );
-					PassParameters->EmitterData[ i ].Sharpness = Params.NoiseEmitters[ 0 ].Sharpness;
+					FVector4f pos
+					(
+						Params.NoiseEmitters[ i ].Position.X,
+						Params.NoiseEmitters[ i ].Position.Y,
+						Params.NoiseEmitters[ i ].Position.Z,
+						Params.NoiseEmitters[ i ].Range
+						);
+					PassParameters->Positions[ i ] = pos;
+					
+					//PassParameters->EmitterData[ i ].Position  = pos;
+					//PassParameters->EmitterData[ i ].Range     = Params.NoiseEmitters[ i ].Range;
+					//PassParameters->EmitterData[ i ].Sharpness = Params.NoiseEmitters[ i ].Sharpness;
 				}
 				PassParameters->EmitterAmount     = CopyCount;			
 				PassParameters->RenderTargetWrite = GraphBuilder.CreateUAV(RtWrite);
