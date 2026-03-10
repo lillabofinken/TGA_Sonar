@@ -18,9 +18,17 @@ public class DeformationCompute: ModuleRules
 		{
 			PrivateDependencyModuleNames.Add("TargetPlatform");
 		}
-		PublicDependencyModuleNames.Add("Core");
-		PublicDependencyModuleNames.Add("Engine");
-		PublicDependencyModuleNames.Add("MaterialShaderQualitySettings");
+		//PublicDependencyModuleNames.Add("Core");
+		//PublicDependencyModuleNames.Add("Engine");
+		//PublicDependencyModuleNames.Add("MaterialShaderQualitySettings");
+		PublicDependencyModuleNames.AddRange(new string[]
+		{
+			"Core",
+			"Engine",
+			"MaterialShaderQualitySettings",
+			"InputCore",
+			"Landscape"  // Add this line
+		});
 		
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{

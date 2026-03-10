@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Landscape.h"
 #include "GenericPlatform/GenericPlatformMisc.h"
 #include "Kismet/BlueprintAsyncActionBase.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -8,6 +9,7 @@
 
 #include "DeformationCS/DeformationCS.h"
 #include "PassiveSonarCS/PassiveSonarCS.h"
+#include "TopographicMapCS/TopographicMapCS.h"
 #include "DeformationCSLibrary.generated.h"
 //This is a static blueprint library that can be used to invoke our compute shader from blueprints.
 UCLASS()
@@ -18,8 +20,23 @@ class DEFORMATIONCOMPUTE_API UDeformationCSLibrary : public UObject
 public:
 	UFUNCTION(BlueprintCallable)
 	static void ExecuteRTComputeShader(UTextureRenderTarget2D* RT, UTextureRenderTarget2D* InputTexture, float CurrentAngle, float UpdateAngle, float Range);
-	
 	static void ExecuteRTComputeShader(FDeformationCSDispatchParams _params);
 	
 	static void ExecutePassiveSonarComputeShader(FPassiveSonarCSDispatchParams _params);
+
+	
+	UFUNCTION(BlueprintCallable)
+	static void ExecuteTopographicMapComputeShader
+	(
+		UTextureRenderTarget2D* RT,
+		ALandscape* LandscapeActor,
+		float       ContourLineStep,
+		int         IndexLineStep,
+		float       ContourLineThickness,
+		float       IndexLineThickness
+		);
+	static void ExecuteTopographicMapComputeShader(FTopographicMapCSDispatchParams _params);
+
+
+	UTexture2D* CreateLandscapeHeightmapTexture(ALandscape* LandscapeActor);
 };
