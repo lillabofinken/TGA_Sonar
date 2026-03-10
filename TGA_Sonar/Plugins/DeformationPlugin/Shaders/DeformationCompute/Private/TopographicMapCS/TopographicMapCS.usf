@@ -1,6 +1,13 @@
 #include "/Engine/Public/Platform.ush"
 
-RWTexture2D<float3> RenderTarget;
+RWTexture2D< float3 > RenderTarget;
+Texture2D  < float  > Heightmap;
+int2                  HeightmapResolution;
+
+float ContourLineStep;
+int   IndexLineStep;
+float ContourLineThickness;
+float IndexLineThickness;
 
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void TopographicMapCS(

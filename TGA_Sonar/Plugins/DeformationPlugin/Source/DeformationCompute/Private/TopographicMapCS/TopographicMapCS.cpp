@@ -54,7 +54,15 @@ public:
 		// SHADER_PARAMETER_STRUCT_REF(FMyCustomStruct, MyCustomStruct)
 
 		
-		SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D, RenderTarget)
+		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D, RenderTarget )
+	    SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   Heightmap    )
+		SHADER_PARAMETER                ( FIntPoint,   HeightmapResolution   )
+
+	    
+	    SHADER_PARAMETER( float, ContourLineStep      )
+	    SHADER_PARAMETER( int,   IndexLineStep        )
+	    SHADER_PARAMETER( float, ContourLineThickness )
+	    SHADER_PARAMETER( float, IndexLineThickness   )
 		
 
 	END_SHADER_PARAMETER_STRUCT()
@@ -120,11 +128,23 @@ void FTopographicMapCSInterface::DispatchRenderThread(FRHICommandListImmediate& 
 		if (bIsShaderValid) {
 			FTopographicMapCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FTopographicMapCS::FParameters>();
 
-			
 			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), PF_B8G8R8A8, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
 			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("TopographicMapCS_TempTexture"));
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("TopographicMapCS_RT"));
-			PassParameters->RenderTarget = GraphBuilder.CreateUAV(TmpTexture);
+
+			FIntPoint HeightmapResolution = FIntPoint( Params.Heightmap->GetSizeX(), Params.Heightmap->GetSizeY() );
+			FRDGTextureRef Heightmap = RegisterExternalTexture(GraphBuilder,Params.Heightmap->GetResource()->GetTexture2DRHI(),TEXT( "DeformationCS_RT_Read" ) );
+
+			
+			{// PARAMS
+				PassParameters->RenderTarget         = GraphBuilder.CreateUAV(TmpTexture);
+				PassParameters->Heightmap            = Heightmap;
+				PassParameters->HeightmapResolution           = HeightmapResolution;
+				PassParameters->ContourLineStep      = Params.ContourLineStep;
+                PassParameters->IndexLineStep        = Params.IndexLineStep;
+                PassParameters->ContourLineThickness = Params.ContourLineThickness;
+                PassParameters->IndexLineThickness   = Params.IndexLineThickness;
+			}// PARAMS
 			
 
 			auto GroupCount = FComputeShaderUtils::GetGroupCount(FIntVector(Params.X, Params.Y, Params.Z), FComputeShaderUtils::kGolden2DGroupSize);
