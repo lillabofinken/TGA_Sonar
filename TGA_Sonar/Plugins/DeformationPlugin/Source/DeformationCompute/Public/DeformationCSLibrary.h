@@ -38,5 +38,5 @@ public:
 	static void ExecuteTopographicMapComputeShader(FTopographicMapCSDispatchParams _params);
 
 
-	UTexture2D* CreateLandscapeHeightmapTexture(ALandscape* LandscapeActor);
+	static UTexture2D* CreateLandscapeHeightmapTexture(ALandscape* LandscapeActor);
 };

@@ -41,11 +41,12 @@ void UDeformationCSLibrary::ExecuteTopographicMapComputeShader( UTextureRenderTa
 	
 	FTopographicMapCSDispatchParams Params(RT->SizeX, RT->SizeY, 1);
 	Params.RenderTarget = RT->GameThread_GetRenderTargetResource();
+	Params.Heightmap = CreateLandscapeHeightmapTexture( LandscapeActor );
 	Params.ContourLineStep = ContourLineStep;
 	Params.IndexLineStep = IndexLineStep;
 	Params.ContourLineThickness = ContourLineThickness;
 	Params.IndexLineThickness = IndexLineThickness;
-	
+	FTopographicMapCSInterface::Dispatch( Params );
 }
 
 void UDeformationCSLibrary::ExecuteTopographicMapComputeShader( FTopographicMapCSDispatchParams _params )

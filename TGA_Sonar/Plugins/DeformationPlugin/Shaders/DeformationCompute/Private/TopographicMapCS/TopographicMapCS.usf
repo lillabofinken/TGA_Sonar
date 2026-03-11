@@ -2,7 +2,9 @@
 
 RWTexture2D< float3 > RenderTarget;
 Texture2D  < float  > Heightmap;
+int2                  MapResolution;
 int2                  HeightmapResolution;
+SamplerState          TextureSampler;
 
 float ContourLineStep;
 int   IndexLineStep;
@@ -14,10 +16,13 @@ void TopographicMapCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
+	const float2 UV = float2( DispatchThreadId.xy ) / float2( MapResolution );
+	const float HeightmapValue = Heightmap.Sample(TextureSampler, UV);
+	
 	// Simple checkerboard
 	int x = floor(DispatchThreadId.x / 16.f);
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTarget[DispatchThreadId.xy] = float3(c, c, c);
+	RenderTarget[DispatchThreadId.xy] = frac( HeightmapValue );//float3(frac( HeightmapValue ), c, c);
 }

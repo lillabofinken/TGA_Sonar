@@ -56,8 +56,9 @@ public:
 		
 		SHADER_PARAMETER_RDG_TEXTURE_UAV( RWTexture2D, RenderTarget )
 	    SHADER_PARAMETER_RDG_TEXTURE    ( Texture2D,   Heightmap    )
+		SHADER_PARAMETER                ( FIntPoint,   MapResolution   )
 		SHADER_PARAMETER                ( FIntPoint,   HeightmapResolution   )
-
+	    SHADER_PARAMETER_SAMPLER        ( SamplerState, TextureSampler )
 	    
 	    SHADER_PARAMETER( float, ContourLineStep      )
 	    SHADER_PARAMETER( int,   IndexLineStep        )
@@ -128,7 +129,8 @@ void FTopographicMapCSInterface::DispatchRenderThread(FRHICommandListImmediate& 
 		if (bIsShaderValid) {
 			FTopographicMapCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FTopographicMapCS::FParameters>();
 
-			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(Params.RenderTarget->GetSizeXY(), PF_B8G8R8A8, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
+			FIntPoint MapResolution = Params.RenderTarget->GetSizeXY();
+			FRDGTextureDesc Desc(FRDGTextureDesc::Create2D(MapResolution, PF_B8G8R8A8, FClearValueBinding::White, TexCreate_RenderTargetable | TexCreate_ShaderResource | TexCreate_UAV));
 			FRDGTextureRef TmpTexture = GraphBuilder.CreateTexture(Desc, TEXT("TopographicMapCS_TempTexture"));
 			FRDGTextureRef TargetTexture = RegisterExternalTexture(GraphBuilder, Params.RenderTarget->GetRenderTargetTexture(), TEXT("TopographicMapCS_RT"));
 
@@ -139,7 +141,10 @@ void FTopographicMapCSInterface::DispatchRenderThread(FRHICommandListImmediate& 
 			{// PARAMS
 				PassParameters->RenderTarget         = GraphBuilder.CreateUAV(TmpTexture);
 				PassParameters->Heightmap            = Heightmap;
-				PassParameters->HeightmapResolution           = HeightmapResolution;
+				PassParameters->MapResolution  = MapResolution;
+				PassParameters->HeightmapResolution  = HeightmapResolution;
+				PassParameters->TextureSampler       = TStaticSamplerState<ESamplerFilter::SF_Bilinear>::GetRHI();
+
 				PassParameters->ContourLineStep      = Params.ContourLineStep;
                 PassParameters->IndexLineStep        = Params.IndexLineStep;
                 PassParameters->ContourLineThickness = Params.ContourLineThickness;
