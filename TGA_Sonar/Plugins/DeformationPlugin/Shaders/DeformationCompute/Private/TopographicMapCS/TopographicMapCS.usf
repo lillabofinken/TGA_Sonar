@@ -11,18 +11,72 @@ int   IndexLineStep;
 float ContourLineThickness;
 float IndexLineThickness;
 
+float Hash12(float2 p)
+{
+	float3 p3  = frac(float3(p.xyx) * 0.1031);
+	p3 += dot(p3, p3.yzx + 33.33);
+	return frac((p3.x + p3.y) * p3.z);
+}
+
+float NormalizedToNormalizedStep( float Value, float Step )
+{
+	return int( Value * 512.0 / Step ) / 512.0;
+}
+float BlurredSample( float2 UV )
+{
+	return Heightmap.Sample(TextureSampler, UV ) + 0.0 * Hash12(UV * 123.432571);
+	float BlurredHeight = 0;
+	for(int x = -1; x < 2; x++)
+	{
+		for(int y = -1; y < 2; y++)
+		{
+			const float2 LoopUV = float2( int2( x, y ) ) / float2( MapResolution ) + UV;
+			BlurredHeight += Heightmap.Sample(TextureSampler, LoopUV);
+
+		}
+	}
+	BlurredHeight /= 9.0;
+	return BlurredHeight;
+}
+
 [numthreads(THREADS_X, THREADS_Y, THREADS_Z)]
 void TopographicMapCS(
 	uint3 DispatchThreadId : SV_DispatchThreadID,
 	uint GroupIndex : SV_GroupIndex )
 {
 	const float2 UV = float2( DispatchThreadId.xy ) / float2( MapResolution );
-	const float HeightmapValue = Heightmap.Sample(TextureSampler, UV);
+	const float HeightmapValue = BlurredSample( UV );
+	const float HeightInMeter = HeightmapValue * 512.0;
+	const float SteppedHeight = NormalizedToNormalizedStep(HeightmapValue, 10.0);
+	
+	
+	float differenceFound = 0;
+	float PervHeightValue = HeightmapValue;
+	int2 HalfLoop = int2( 4, 4 );
+	for(int x = -HalfLoop.x; x < HalfLoop.x; x++)
+	{
+		for(int y = -HalfLoop.y; y < HalfLoop.y; y++)
+		{
+			const int2 UvOffset = int2( x, y ) + step( 0, int2( x, y ) );
+			const float2 LoopUV = float2( DispatchThreadId.xy + int2( x - 1, y - 1 ) ) / float2( MapResolution );
+			//const float  LoopHeightmapValue = Heightmap.Sample(TextureSampler, LoopUV );
+			const float  LoopHeightmapValue = BlurredSample( LoopUV );
+
+
+			const float  LoopSteppedHeight = NormalizedToNormalizedStep(LoopHeightmapValue, 10.0);
+
+			if ( abs( SteppedHeight - LoopSteppedHeight ) > 0.001)
+			{
+				differenceFound = max( differenceFound, 1.0 - length( float2( UvOffset ) / float2( HalfLoop ) ) );
+			}
+		}
+	}
+	
 	
 	// Simple checkerboard
 	int x = floor(DispatchThreadId.x / 16.f);
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTarget[DispatchThreadId.xy] = frac( HeightmapValue );//float3(frac( HeightmapValue ), c, c);
+	RenderTarget[DispatchThreadId.xy] = float3(differenceFound, NormalizedToNormalizedStep(HeightmapValue, 10.0), HeightmapValue);
 }
