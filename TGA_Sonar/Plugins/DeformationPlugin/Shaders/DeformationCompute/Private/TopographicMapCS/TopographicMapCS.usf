@@ -24,13 +24,13 @@ float NormalizedToNormalizedStep( float Value, float Step )
 }
 float BlurredSample( float2 UV )
 {
-	return Heightmap.Sample(TextureSampler, UV ) + 0.0 * Hash12(UV * 123.432571);
+	//return Heightmap.Sample(TextureSampler, UV ) + 0.0 * Hash12(UV * 123.432571);
 	float BlurredHeight = 0;
 	for(int x = -1; x < 2; x++)
 	{
 		for(int y = -1; y < 2; y++)
 		{
-			const float2 LoopUV = float2( int2( x, y ) ) / float2( MapResolution ) + UV;
+			const float2 LoopUV = float2( int2( x, y ) ) / float2( HeightmapResolution ) + UV;
 			BlurredHeight += Heightmap.Sample(TextureSampler, LoopUV);
 
 		}

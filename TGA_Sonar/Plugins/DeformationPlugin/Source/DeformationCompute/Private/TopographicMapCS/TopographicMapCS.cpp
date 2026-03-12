@@ -143,7 +143,7 @@ void FTopographicMapCSInterface::DispatchRenderThread(FRHICommandListImmediate& 
 				PassParameters->Heightmap            = Heightmap;
 				PassParameters->MapResolution  = MapResolution;
 				PassParameters->HeightmapResolution  = HeightmapResolution;
-				PassParameters->TextureSampler       = TStaticSamplerState<ESamplerFilter::SF_Point>::GetRHI();
+				PassParameters->TextureSampler       = TStaticSamplerState<ESamplerFilter::SF_Trilinear>::GetRHI();
 
 				PassParameters->ContourLineStep      = Params.ContourLineStep;
                 PassParameters->IndexLineStep        = Params.IndexLineStep;
