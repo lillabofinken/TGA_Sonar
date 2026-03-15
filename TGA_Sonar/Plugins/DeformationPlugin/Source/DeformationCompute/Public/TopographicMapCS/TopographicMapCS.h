@@ -21,8 +21,8 @@ struct DEFORMATIONCOMPUTE_API FTopographicMapCSDispatchParams
 	float ContourLineStep;
 	int   IndexLineStep;
 
-	float ContourLineThickness;
-	float IndexLineThickness;
+	int ContourLineThickness;
+	int IndexLineThickness;
 	
 	
 

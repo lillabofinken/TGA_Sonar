@@ -1,6 +1,6 @@
 #include "/Engine/Public/Platform.ush"
 
-RWTexture2D< float3 > RenderTarget;
+RWTexture2D< float4 > RenderTarget;
 Texture2D  < float  > Heightmap;
 int2                  MapResolution;
 int2                  HeightmapResolution;
@@ -8,8 +8,8 @@ SamplerState          TextureSampler;
 
 float ContourLineStep;
 int   IndexLineStep;
-float ContourLineThickness;
-float IndexLineThickness;
+int ContourLineThickness;
+int IndexLineThickness;
 
 float Hash12(float2 p)
 {
@@ -32,7 +32,6 @@ float BlurredSample( float2 UV )
 		{
 			const float2 LoopUV = float2( int2( x, y ) ) / float2( HeightmapResolution ) + UV;
 			BlurredHeight += Heightmap.Sample(TextureSampler, LoopUV);
-
 		}
 	}
 	BlurredHeight /= 9.0;
@@ -47,15 +46,16 @@ void TopographicMapCS(
 	const float2 UV = float2( DispatchThreadId.xy ) / float2( MapResolution );
 	const float HeightmapValue = BlurredSample( UV );
 	const float HeightInMeter = HeightmapValue * 512.0;
-	const float SteppedHeight = NormalizedToNormalizedStep(HeightmapValue, 10.0);
+	const float SteppedHeight = NormalizedToNormalizedStep(HeightmapValue, ContourLineStep);
+	const float SteppedHeightIndex = NormalizedToNormalizedStep(HeightmapValue, ContourLineStep * IndexLineStep);
 	
 	
-	float differenceFound = 0;
+	float2 differenceFound = 0;
 	float PervHeightValue = HeightmapValue;
-	int2 HalfLoop = int2( 4, 4 );
-	for(int x = -HalfLoop.x; x < HalfLoop.x; x++)
+	const int LoopThickness = ContourLineThickness + IndexLineThickness;
+	for(int x = -LoopThickness; x < LoopThickness; x++)
 	{
-		for(int y = -HalfLoop.y; y < HalfLoop.y; y++)
+		for(int y = -LoopThickness; y < LoopThickness; y++)
 		{
 			const int2 UvOffset = int2( x, y ) + step( 0, int2( x, y ) );
 			const float2 LoopUV = float2( DispatchThreadId.xy + int2( x - 1, y - 1 ) ) / float2( MapResolution );
@@ -63,20 +63,28 @@ void TopographicMapCS(
 			const float  LoopHeightmapValue = BlurredSample( LoopUV );
 
 
-			const float  LoopSteppedHeight = NormalizedToNormalizedStep(LoopHeightmapValue, 10.0);
+			const float LoopSteppedHeight = NormalizedToNormalizedStep(LoopHeightmapValue, ContourLineStep );
+			const float LoopSteppedHeightIndex = NormalizedToNormalizedStep(LoopHeightmapValue, ContourLineStep * IndexLineStep );
+			const float IndexContourSelect = step( abs( LoopSteppedHeight - LoopSteppedHeightIndex ), 0.0000001 );
 
+			//differenceFound = max( IndexContourSelect, differenceFound );
 			if ( abs( SteppedHeight - LoopSteppedHeight ) > 0.001)
 			{
-				differenceFound = max( differenceFound, 1.0 - length( float2( UvOffset ) / float2( HalfLoop ) ) );
+				//const float Thickness = lerp( ContourLineThickness, LoopThickness, IndexContourSelect );
+				//differenceFound = float2( max( differenceFound, 1.0 - length( float2( UvOffset ) / Thickness ) ) ) * float2( IndexContourSelect, 1 - IndexContourSelect);
+				differenceFound.x = max( differenceFound.x, 1.0 - length( float2( UvOffset ) / ContourLineThickness ) );
+			}
+			if ( abs( SteppedHeightIndex - LoopSteppedHeightIndex ) > 0.001)
+			{
+				differenceFound.y = max( differenceFound.y, 1.0 - length( float2( UvOffset ) / LoopThickness ) );
 			}
 		}
 	}
-	
-	
+
 	// Simple checkerboard
 	int x = floor(DispatchThreadId.x / 16.f);
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTarget[DispatchThreadId.xy] = float3(differenceFound, NormalizedToNormalizedStep(HeightmapValue, 10.0), HeightmapValue);
+	RenderTarget[DispatchThreadId.xy] = float4(differenceFound, NormalizedToNormalizedStep(HeightmapValue, 10.0), HeightmapValue);
 }

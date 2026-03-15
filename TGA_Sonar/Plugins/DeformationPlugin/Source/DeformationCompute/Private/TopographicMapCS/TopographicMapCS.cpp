@@ -62,8 +62,8 @@ public:
 	    
 	    SHADER_PARAMETER( float, ContourLineStep      )
 	    SHADER_PARAMETER( int,   IndexLineStep        )
-	    SHADER_PARAMETER( float, ContourLineThickness )
-	    SHADER_PARAMETER( float, IndexLineThickness   )
+	    SHADER_PARAMETER( int, ContourLineThickness )
+	    SHADER_PARAMETER( int, IndexLineThickness   )
 		
 
 	END_SHADER_PARAMETER_STRUCT()
