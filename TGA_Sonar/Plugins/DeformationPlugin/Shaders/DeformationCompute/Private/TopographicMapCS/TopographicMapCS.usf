@@ -20,13 +20,14 @@ float Hash12(float2 p)
 
 float NormalizedToNormalizedStep( float Value, float Step )
 {
-	return int( Value * 512.0 / Step ) / 512.0;
+	return ( int( Value * 512.0 / Step ) * Step ) / 512.0;
 }
 float BlurredSample( float2 UV )
 {
-	//return Heightmap.Sample(TextureSampler, UV ) + 0.0 * Hash12(UV * 123.432571);
 	float BlurredHeight = 0;
-	for(int x = -1; x < 2; x++)
+		
+	//return Heightmap.Sample(TextureSampler, UV ) + 0.0 * Hash12(UV * 123.432571);
+	for(int x = -2; x < 3; x++)
 	{
 		for(int y = -1; y < 2; y++)
 		{
@@ -45,13 +46,13 @@ void TopographicMapCS(
 {
 	const float2 UV = float2( DispatchThreadId.xy ) / float2( MapResolution );
 	const float HeightmapValue = BlurredSample( UV );
-	const float HeightInMeter = HeightmapValue * 512.0;
+
 	const float SteppedHeight = NormalizedToNormalizedStep(HeightmapValue, ContourLineStep);
 	const float SteppedHeightIndex = NormalizedToNormalizedStep(HeightmapValue, ContourLineStep * IndexLineStep);
 	
 	
 	float2 differenceFound = 0;
-	float PervHeightValue = HeightmapValue;
+
 	const int LoopThickness = ContourLineThickness + IndexLineThickness;
 	for(int x = -LoopThickness; x < LoopThickness; x++)
 	{
@@ -86,5 +87,5 @@ void TopographicMapCS(
 	int y = floor(DispatchThreadId.y / 16.f);
 	int c = (x + y % 2) % 2;
 	
-	RenderTarget[DispatchThreadId.xy] = float4(differenceFound, NormalizedToNormalizedStep(HeightmapValue, 10.0), HeightmapValue);
+	RenderTarget[DispatchThreadId.xy] = float4(differenceFound, SteppedHeight, HeightmapValue);
 }
